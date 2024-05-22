@@ -1,0 +1,18 @@
+﻿<div class="square  @squarer.Style " @onmouseup="ValidateHit">
+    <div class="@squarer.Style"></div>
+    @if (@squarer.contador>0)
+        @squarer.contador
+
+</div>
+
+@code {
+
+    [Parameter]
+    public EventCallback OnmouseUp{ get; set; }
+    [Parameter]
+    public BlazorApp13.Models.Square squarer { get; set; }
+    private void ValidateHit()
+    {
+        OnmouseUp.InvokeAsync(new EventArgs());
+    }
+}

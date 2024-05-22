@@ -1,0 +1,232 @@
+﻿@page "/"
+@using BlazorApp13.Models
+@using BlazorApp13.Services
+@using Microsoft.JSInterop;
+@using CurrieTechnologies.Razor.SweetAlert2;
+@inject Microsoft.JSInterop.IJSRuntime jsRuntime;
+@inject NavigationManager Navigation;
+@inject SweetAlertService swal;
+@inject DataServices data;
+
+
+
+<PageTitle>Home</PageTitle>
+<select @onchange="UpdateGridColumns">
+    <option value="3">3 Columns</option>
+    <option value="4">4 Columns</option>
+    <option value="5" selected>5 Columns</option>
+    <option value="6">6 Columns</option>
+</select>
+<div class="row">
+    <div class="col-md-3">
+      
+    </div>
+    <div class="col-md-9">
+<h3> score: @board.contador</h3>
+
+<BlazorApp13.Componets.Temporizador />
+
+<h3> hight Score: @player.Score </h3>
+    </div>
+</div>
+
+@code{
+
+
+    public Board board = new Board();
+
+    
+    public int id = 0;
+    public int contador = 0;
+    public bool firstMovent = true;
+    public List<Square> squares { get; set; } = new List<Square>();
+    public  Player player = new Player();
+    public string name { get; set; }
+    public int x = 5;
+    public int y = 5;
+    private string boardStyle => $"grid-template-columns: repeat({x}, 45px);";
+
+
+
+
+    protected override void OnInitialized()
+    {
+        getData();
+        createBoard(x, y);
+    }
+
+    private void UpdateGridColumns(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value.ToString(), out int newColumnCount))
+        {
+            x = newColumnCount;
+            y = newColumnCount;
+            StateHasChanged();
+            createBoard(x, y);
+        }
+    }
+    public async void getData()
+    {
+        player = await data.GetData();
+    }
+
+
+    public void createBoard(int x, int y)
+    {
+        for (int column = 0; column < y; column++)
+        {
+            for (int row = 0; row < x; row++)
+            {
+                id++;
+
+                squares.Add(new Square
+                    {
+
+                        Id = id,
+                        x = row,
+                        y = column
+
+                    });
+            }
+
+        }
+    }
+
+    private async Task MouseUp(Square square)
+    {
+
+        var newSquare = squares.FirstOrDefault(squares => squares.Id == square.Id);
+
+        if (!firstMovent)
+        {
+
+            newSquare = squares.FirstOrDefault(squares => squares.Id == square.Id && squares.Style == "nextMovimiento");
+
+
+        }
+        else
+        {
+            firstMovent = false;
+        }
+
+
+        if (newSquare != null)
+        {
+            var lastSquare = squares.Where(square => square.Style == "nextMovimiento");
+            var character = squares.FirstOrDefault(squares => squares.Style == "character");
+            if (character != null)
+            {
+                character.Style = "beforeMovent";
+            }
+
+
+            if (lastSquare != null)
+            {
+                foreach (var item in lastSquare)
+                {
+                    item.Style = "";
+                }
+
+            }
+
+            GetHorse(newSquare.y, newSquare.x);
+            newSquare.Style = "character";
+            contador++;
+            newSquare.contador = contador;
+            board.contador = contador;
+
+            var existNextmovent = squares.FirstOrDefault(squares => squares.Style == "nextMovimiento");
+
+        }
+    }
+
+
+
+    async void GetHorse(int column, int row)
+    {
+        bool foundMatchingSquare = false;
+        int[] moveX = { 1, -1, 2, -2, 1, -1, 2, -2 };
+        int[] moveY = { 2, 2, 1, 1, -2, -2, -1, -1 };
+
+        for (int i = 0; i < 8; i++)
+        {
+            int nextX = row + moveX[i];
+            int nextY = column + moveY[i];
+
+            var matchingSquare = squares.FirstOrDefault(square => square.x == nextX && square.y == nextY);
+
+            if (matchingSquare != null)
+            {
+                if (matchingSquare.Style != "beforeMovent")
+                {
+                    matchingSquare.Style = "nextMovimiento";
+                    foundMatchingSquare = true;
+                }
+
+
+            }
+
+        }
+        // Si no se encontró ninguna coincidencia, puedes realizar alguna acción
+
+        if (!foundMatchingSquare)
+        {
+
+            if (board.contador+1 >= (x*y))
+            {
+
+                var resultado = await swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Felicidades, Haz ganado",
+                        Text = "Your Score is: " + contador,
+                        Icon = SweetAlertIcon.Success,
+                        InputLabel = "Ingresa tu nombre",
+                        Input=SweetAlertInputType.Text,
+                        Position = SweetAlertPosition.Top,
+                        ConfirmButtonText = "Ingresar",
+
+        
+                       
+                    });
+              /*  player.Name = resultado.Value;
+                  player.Score = contador;
+                  player.Date = DateTime.UtcNow;*/
+
+                   
+            }
+            else
+            {
+                if (contador > player.Score)
+                {
+                    player.Name = "invictado";
+                    player.Score = contador;
+                    player.Date = DateTime.UtcNow;
+                }
+               
+                 await data.SaveData(player);
+                var resultado = await swal.FireAsync(new SweetAlertOptions
+                    {
+                        
+                        Title = "You Lose",
+                        Text = "Your Score is:" +contador,
+                        Icon = SweetAlertIcon.Info,
+                        ConfirmButtonText = "OK",
+                       Position=SweetAlertPosition.Top,
+                       
+                          
+                        
+
+                    });
+            
+               
+
+                //await jsRuntime.InvokeVoidAsync("alert", "¡Haz Perdido");
+            }
+          
+            await jsRuntime.InvokeVoidAsync("location.reload");
+
+        }
+    }
+}
+
+}
