@@ -1,0 +1,44 @@
+[
+  {
+    "Word": 1,
+    "Black": "#7795",
+    "White": "#FFEB",
+    "Row": 4,
+    "Column": 3
+  },
+  {
+    "Word": 2,
+    "Black": "#8B45",
+    "White": "#FFDA",
+    "Row": 5,
+    "Column": 5
+  },
+  {
+    "Word": 3,
+    "Black": "#4C58",
+    "White": "#F0E6",
+    "Row": 8,
+    "Column": 8
+  },
+  {
+    "Word": 4,
+    "Black": "#8B45",
+    "White": "#FFE4",
+    "Row": 6,
+    "Column": 6
+  },
+  {
+    "Word": 5,
+    "Black": "#f0d9b5",
+    "White": "b58863",
+    "Row": 4,
+    "Column": 7
+  },
+  {
+    "Word": 6,
+    "Black": "#0000",
+    "White": "#FFFF",
+    "Row": 10,
+    "Column": 10
+  }
+]

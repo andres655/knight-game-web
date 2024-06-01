@@ -1,8 +1,11 @@
-﻿<div class="square  @squarer.Style " @onmouseup="ValidateHit">
-    <div class="@squarer.Style"></div>
-    @if (@squarer.contador>0)
-        @squarer.contador
+﻿<div class="square @squarer.color" @onmouseup="ValidateHit">
 
+    
+    <div class="@squarer.Style">
+        @if (@squarer.contador > 0)
+            @squarer.contador
+
+    </div>
 </div>
 
 @code {

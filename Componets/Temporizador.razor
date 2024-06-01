@@ -1,16 +1,6 @@
-﻿<div class="clock">
-    <div class="time-unit hours">
-        <div class="number">@temporizador.horas.ToString("D2")</div>
-    </div>
-    <div class="tick">:</div>
-    <div class="time-unit minutes">
-        <div class="number">@temporizador.minutos.ToString("D2")</div>
-    </div>
-    <div class="tick">:</div>
-    <div class="time-unit seconds">
-        <div class="number">@temporizador.segundos.ToString("D2")</div>
-    </div>
-</div>
+﻿
+
+<span class="clock-time-next-monospace"> <Icon Name="IconName.Clock" /> @temporizador.minutos.ToString("D2"): @temporizador.segundos.ToString("D2")</span>
 
 @code {
     public Models.Temporizador temporizador = new Models.Temporizador();
@@ -49,4 +39,12 @@
     {
         temporizador.contadorActivo = false;
     }
+
+    public void ResetContador()
+    {
+        temporizador.horas = 0;
+        temporizador.minutos = 0;
+        temporizador.segundos = 0;
+    }
+
 }

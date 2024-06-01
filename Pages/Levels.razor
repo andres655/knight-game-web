@@ -1,0 +1,80 @@
+﻿@page "/"
+@using BlazorApp13.Models
+@using BlazorApp13.Services
+@inject HttpClient Http
+@inject DataServices data
+@inject NavigationManager Navigation
+@inject LevelServices LevelService
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+
+<div class="container">
+    <div class="row ">
+        @if (l == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else{
+            @foreach (var item in l)
+            {
+
+
+                <div class="col-xl-6 col-lg-6">
+                    <div @onclick="() => getLevel(item)"  class="card" style="background: linear-gradient(to right, @item.Black, @item.White) !important;color: #fff;">
+                        <div class="card-statistic-3 p-4">
+                            <div class="card-icon card-icon-large"><i class="fas fa-chess-knight"></i></div>
+                            <div class="mb-4">
+                                <h5 class="card-title mb-0"> Level:@item.Word (@item.Row * @item.Column)</h5>
+                            </div>
+                            <div class="row align-items-center mb-2 d-flex">
+                                <div class="col-8">
+                                    <h2 class="d-flex align-items-center mb-0">
+                                      @player.Score
+                                    </h2>
+                                </div>
+                                <div class="col-4 text-right">
+                                    <span>@GetPercentage(player.Score, item.Row, item.Column)% <i class="fa fa-arrow-up"></i></span>
+                                </div>
+                            </div>
+                            <div class="progress mt-1 " data-height="8" style="height: 8px;">
+                                <div class="progress-bar l-bg-cyan" role="progressbar" data-width="@GetPercentage(player.Score, item.Row, item.Column)%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" style="width: @GetPercentage(player.Score, item.Row, item.Column)%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        }
+
+    </div>
+</div>
+@code {
+    private Level[]? l;
+
+    public Player player = new Player();
+    public int perPlayer;
+    protected override async void OnInitialized()
+    {
+        l = await Http.GetFromJsonAsync<Level[]>("Level.json");
+        
+         await getData();
+        StateHasChanged();
+    }
+    public async Task getData()
+    {
+        player = await data.GetData();
+       
+    }
+
+
+    private string  GetPercentage(int score, int rows, int columns)
+    {
+        if (rows * columns == 0) return "0";
+        return (score / (rows * columns) * 10).ToString("D2");
+    }
+    public void getLevel(Level level)
+    {
+        LevelService.CurrentLevel = level;
+        Navigation.NavigateTo("/levels");
+    }
+
+}
