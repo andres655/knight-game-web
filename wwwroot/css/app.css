@@ -219,7 +219,7 @@ code {
     align-items: center; /* Centra los elementos verticalmente */
     padding: 1em; /* Opcional: Añadir algo de padding para mejor apariencia */
     background-color: #262421; /* Opcional: Añadir un color de fondo */
-    border-bottom: 1px solid #ddd; /* Opcional: Añadir un borde inferior */
+   
 }
     .header span {
         flex: 1; /* Distribuye el espacio equitativamente */
@@ -296,7 +296,7 @@ body {
     font-weight: 400;
     font-size: 16px;
     line-height: 30px;
-    background-color: rgba(90,97,105,0.1);
+    background-color: #202122 !important;
     overflow-x: hidden;
     color: #ababab;
 }

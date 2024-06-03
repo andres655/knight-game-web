@@ -8,73 +8,93 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
 
 <div class="container">
-    <div class="row ">
+    <div class="row">
         @if (l == null)
         {
             <p><em>Loading...</em></p>
         }
-        else{
+        else
+        {
             @foreach (var item in l)
             {
-
-
-                <div class="col-xl-6 col-lg-6">
-                    <div @onclick="() => getLevel(item)"  class="card" style="background: linear-gradient(to right, @item.Black, @item.White) !important;color: #fff;">
+                <div class="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-6">
+                    <div @onclick="() => getLevel(item)" class="card" style="background: linear-gradient(to right, @item.Black, @item.White) !important; color: #fff;">
                         <div class="card-statistic-3 p-4">
                             <div class="card-icon card-icon-large"><i class="fas fa-chess-knight"></i></div>
                             <div class="mb-4">
-                                <h5 class="card-title mb-0"> Level:@item.Word (@item.Row * @item.Column)</h5>
+                                <h5 class="card-title mb-0">Level: @item.Word <span style="font-size: 5px;">(@item.Row * @item.Column)</span></h5>
                             </div>
                             <div class="row align-items-center mb-2 d-flex">
                                 <div class="col-8">
-                                    <h2 class="d-flex align-items-center mb-0">
-                                      @player.Score
-                                    </h2>
+                                    <h2 class="d-flex align-items-center mb-0">@levelData[item.Word.ToString()]</h2>
                                 </div>
                                 <div class="col-4 text-right">
-                                    <span>@GetPercentage(player.Score, item.Row, item.Column)% <i class="fa fa-arrow-up"></i></span>
+                                    <span class="d-none d-sm-inline">@GetPercentage(item.Row, item.Column, item.Word.ToString())% <i class="fa fa-arrow-up"></i></span>
                                 </div>
                             </div>
-                            <div class="progress mt-1 " data-height="8" style="height: 8px;">
-                                <div class="progress-bar l-bg-cyan" role="progressbar" data-width="@GetPercentage(player.Score, item.Row, item.Column)%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" style="width: @GetPercentage(player.Score, item.Row, item.Column)%;"></div>
+                            <div class="progress mt-1" data-height="8" style="height: 8px;">
+                                <div class="progress-bar l-bg-cyan" role="progressbar" data-width="@GetPercentage(item.Row, item.Column, item.Word.ToString())%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" style="width: @GetPercentage(item.Row, item.Column, item.Word.ToString())%;">
+                                </div>
+                            </div>
+                            <div class="row mt-2 d-flex d-sm-none">
+                                <div class="col-12">
+                                    <span class="d-inline d-sm-none">@GetPercentage(item.Row, item.Column, item.Word.ToString())% <i class="fa fa-arrow-up"></i></span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             }
-
         }
-
     </div>
 </div>
 @code {
     private Level[]? l;
+    private Dictionary<string, string> levelData = new Dictionary<string, string>();
 
-    public Player player = new Player();
-    public int perPlayer;
-    protected override async void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         l = await Http.GetFromJsonAsync<Level[]>("Level.json");
-        
-         await getData();
+
+        foreach (var item in l)
+        {
+            levelData[item.Word.ToString()] = "0";
+            levelData[item.Word.ToString()] = await getData(item.Word.ToString());
+            Console.WriteLine(levelData[item.Word.ToString()]);
+        }
+
         StateHasChanged();
     }
-    public async Task getData()
+
+    public async Task<string> getData(string level)
     {
-        player = await data.GetData();
-       
+        Player player = await data.GetData(level);
+        if (player == null)
+        {
+            return "0";
+        }
+        return player.Score.ToString();
     }
 
-
-    private string  GetPercentage(int score, int rows, int columns)
+    public string GetPercentage(int rows, int columns, string word)
     {
-        if (rows * columns == 0) return "0";
-        return (score / (rows * columns) * 10).ToString("D2");
+        if (!levelData.TryGetValue(word, out var scoreString) || !double.TryParse(scoreString, out var score))
+        {
+            return "0";
+        }
+
+        if (rows * columns == 0)
+        {
+            return "0";
+        }
+
+        double result = (double)score / (rows * columns) * 100;
+        return result.ToString("F0");
     }
+
     public void getLevel(Level level)
     {
         LevelService.CurrentLevel = level;
         Navigation.NavigateTo("/levels");
     }
-
 }
