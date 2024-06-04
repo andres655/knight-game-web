@@ -2,6 +2,7 @@
 using BlazorApp13.Models;
 using BlazorApp13.Services;
 using Blazorise;
+using Blazorise.Icons.FontAwesome;
 using CurrieTechnologies.Razor.SweetAlert2;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -9,16 +10,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Json;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace BlazorApp13.Pages
 {
     public partial class Home
     {
-
-        // Propiedades y estados del componente
         public Board board = new Board();
         public int id = 0;
         public int contador = 0;
@@ -28,111 +27,93 @@ namespace BlazorApp13.Pages
         public Level level { get; set; }
         public int x = 5;
         public int y = 5;
-        private int volume = 10; // Volumen inicial al 
+        private int volume = 10; // Volumen inicial
 
-        // Método de inicialización del componente
         protected override void OnInitialized()
         {
             level = LevelService.CurrentLevel;
             if (level == null)
             {
                 Navigation.NavigateTo("/");
+                return;
             }
 
-            // Obtiene datos y crea el tablero inicial
-            getData();
+            InitializeGame();
+        }
+
+        private async void InitializeGame()
+        {
+           
             x = level.Row;
             y = level.Column;
-            createBoard(level.Row, level.Column);
+            createBoard(x, y);
+            PlayBackgroundSound();
+            ResetGame();
+            await getData();
+        }
+
+        private void PlayBackgroundSound()
+        {
             double normalizedVolume = volume / 100.0;
             JS.InvokeVoidAsync("playBackgroundSound", "Sound/fondo.mp3", normalizedVolume);
         }
 
-
-
-        // Actualiza las columnas del tablero según la selección del usuario
-        private void UpdateGridColumns(ChangeEventArgs e)
-        {
-            if (int.TryParse(e.Value.ToString(), out int newColumnCount))
-            {
-                x = newColumnCount;
-                y = newColumnCount;
-                squares.Clear();
-                createBoard(x, y);
-                StateHasChanged();
-            }
-        }
-
-        // Obtiene datos del jugador de forma asíncrona
-        public async Task getData()
+        private async Task getData()
         {
             player = await data.GetData(level.Word.ToString());
             StateHasChanged();
         }
 
-        // Crea el tablero de juego
-        public void createBoard(int rows, int columns)
+        private void createBoard(int rows, int columns)
         {
+            id = 0;
+            squares.Clear();
             for (int column = 0; column < columns; column++)
             {
                 for (int row = 0; row < rows; row++)
                 {
                     string color = (column + row) % 2 == 0 ? "white" : "black";
-                    id++;
-
-                    squares.Add(new Square
-                    {
-                        Id = id,
-                        x = row,
-                        y = column,
-                        color = color
-                    });
+                    squares.Add(new Square { Id = ++id, x = row, y = column, color = color });
                 }
             }
         }
 
-        // Maneja el evento de levantar el ratón sobre un cuadrado
         private async Task MouseUp(Square square)
         {
-           
             var newSquare = squares.FirstOrDefault(s => s.Id == square.Id && (firstMovent || s.Style == "nextMovimiento"));
+            if (newSquare == null) return;
 
-            if (newSquare != null)
+            firstMovent = false;
+            ClearStyles("nextMovimiento");
+
+            var character = squares.FirstOrDefault(s => s.Style == "character");
+            if (character != null)
             {
-                if (firstMovent)
-                {
-                    firstMovent = false;
-                }
+                character.Style = "beforeMovent";
+            }
 
-                // Actualiza el estilo de los cuadrados
-                var lastSquares = squares.Where(s => s.Style == "nextMovimiento");
-                foreach (var item in lastSquares)
-                {
-                    item.Style = "";
-                }
+            newSquare.Style = "character";
+            contador++;
+            newSquare.contador = contador;
+            board.contador = contador;
 
-                var character = squares.FirstOrDefault(s => s.Style == "character");
-                if (character != null)
-                {
-                    character.Style = "beforeMovent";
-                }
+            GetKnight(newSquare.y, newSquare.x);
+            await PlaySound("Sound/movent.mp3");
+        }
 
-                // Actualiza el cuadrado actual y busca los próximos movimientos posibles
-                newSquare.Style = "character";
-                contador++;
-                newSquare.contador = contador;
-                board.contador = contador;
-
-                GetKnight(newSquare.y, newSquare.x);
+        private void ClearStyles(string style)
+        {
+            foreach (var item in squares.Where(s => s.Style == style))
+            {
+                item.Style = "";
             }
         }
 
-        // Calcula y marca los movimientos válidos del caballo
         private void GetKnight(int column, int row)
         {
-            bool foundMatchingSquare = false;
             int[] moveX = { 1, -1, 2, -2, 1, -1, 2, -2 };
             int[] moveY = { 2, 2, 1, 1, -2, -2, -1, -1 };
+            bool foundMatchingSquare = false;
 
             for (int i = 0; i < 8; i++)
             {
@@ -144,7 +125,6 @@ namespace BlazorApp13.Pages
                 {
                     matchingSquare.Style = "nextMovimiento";
                     foundMatchingSquare = true;
-
                 }
             }
 
@@ -152,10 +132,12 @@ namespace BlazorApp13.Pages
             {
                 Finnish();
             }
-            JS.InvokeVoidAsync("playSound", "Sound/movent.mp3");
         }
 
-        // Maneja el caso donde no hay más movimientos disponibles
+        private async Task Tutorial()
+        {
+            await showAlert.Tutorial();
+        }
         private async void Finnish()
         {
             if (contador > player.Score)
@@ -167,112 +149,107 @@ namespace BlazorApp13.Pages
             }
 
             await data.SaveData(player);
-            if (board.contador + 1 >= (x * y))
+
+            if (board.contador >= (x * y))
             {
-                await JS.InvokeVoidAsync("playSound", "Sound/winner.mp3");
-                var options = new SweetAlertOptions
-                {
-                    Title = "Felicidades, Haz ganado",
-                    Text = "Your Score is: " + contador,
-
-                    InputLabel = "Ingresa tu nombre",
-                    Position = SweetAlertPosition.Top,
-                    ConfirmButtonText = "Next",
-                    Backdrop = true,
-                    Background = "#fff url(/winner.gif)",
-
-
-                };
-                var result = await swal.FireAsync(options);
-                if (level != null)
-                {
-                    Level[] l = await Http.GetFromJsonAsync<Level[]>("Level.json");
-                    var nextLevel = l
-                        .Where(l => l.Word > level.Word)
-                        .OrderBy(level => level.Word)
-                        .FirstOrDefault();
-                    LevelService.CurrentLevel = nextLevel;
-                    level = LevelService.CurrentLevel;
-                }
-
-
-                reset();
-
+                await PlaySound("Sound/winner.mp3");
+                await showAlert.ShowSweetAlert("Felicidades, Haz ganado", "Your Score is: " + contador, SweetAlertIcon.Success, true);
+                await AdvanceToNextLevel();
             }
             else
             {
-
-                await JS.InvokeVoidAsync("playSound", "Sound/loser.mp3");
-
-                await swal.FireAsync(new SweetAlertOptions
-                {
-                    Title = "You Lose",
-                    Text = "Your Score is:" + contador,
-                    Icon = SweetAlertIcon.Info,
-                    ConfirmButtonText = "OK",
-                    Position = SweetAlertPosition.Top,
-                });
-
-                Navigation.NavigateTo("/");
+                await PlaySound("Sound/loser.mp3");
+                await showAlert.ShowSweetAlert("You Lose", "Your Score is:" + contador, SweetAlertIcon.Info);
             }
+            ResetGame();
+        }
+     
+   
+
+        private async Task AdvanceToNextLevel()
+        {
+            if (level == null) return;
+
+            var levels = await Http.GetFromJsonAsync<Level[]>("Level.json");
+            var nextLevel = levels?.Where(l => l.Word > level.Word).OrderBy(l => l.Word).FirstOrDefault();
+            LevelService.CurrentLevel = nextLevel;
+            level = LevelService.CurrentLevel;
+
+            ResetGame();
         }
 
-        public void exit() {
-            Navigation.NavigateTo("/");
-
-        }
-
-        public void reset()
+        private async void ResetGame()
         {
             board = new Board();
             id = 0;
             contador = 0;
             firstMovent = true;
-            squares = new List<Square>();
+            squares.Clear();
             player = new Player();
 
-            x = level.Row;
-            y = level.Column;
-            squares.Clear();
-            createBoard(x, y);
+            if (level != null)
+            {
+                x = level.Row;
+                y = level.Column;
+                createBoard(x, y);
+            }
+
             StateHasChanged();
             Navigation.NavigateTo("/levels");
-
-
+            await getData();
         }
-        public void back()
+
+      
+
+        private async Task PlaySound(string soundPath)
         {
-            modifySquare(
-
-                  squares => {
-                      squares.Style = "";
-                      squares.contador = 0;
-
-                  },
-             squares => {
-                
-                 
-
-             });
-           
-          
+            await JS.InvokeVoidAsync("playSound", soundPath);
         }
-        public async void modifySquare(Action<Square> modifyCurrent, Action<Square> modifyLast)
+
+        public void Exit()
         {
-            // Ordenar la lista en orden descendente basado en ColumnCounter
+            Navigation.NavigateTo("/");
+        }
+
+        public void Back()
+        {
+            if (contador <= 0) return;
+
+            ModifySquare(
+                current =>
+                {
+                    current.Style = "";
+                    current.contador = 0;
+                },
+                last => last.Style = ""
+            );
+        }
+
+        public async void ModifySquare(Action<Square> modifyCurrent, Action<Square> modifyLast)
+        {
             var sortedSquares = squares.OrderByDescending(s => s.contador).ToList();
+            if (sortedSquares.Count < 2) return;
 
-            // Obtener el segundo elemento
-            var last = sortedSquares[1];
             var current = sortedSquares[0];
+            var last = sortedSquares[1];
+            var next = squares.Where(s => s.Style == "nextMovimiento").ToList();
+
             firstMovent = true;
             modifyCurrent(current);
             contador = contador - 2;
-            await  MouseUp(last);
-            
-            modifyLast(last);
-           
+
+            if (contador >= 0)
+            {
+                await MouseUp(last);
+            }
+            else
+            {
+                foreach (var item in next)
+                {
+                    contador = 0;
+                    modifyLast(item);
+                }
+            }
         }
-    } 
+    }
 }
-  

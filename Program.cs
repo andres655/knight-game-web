@@ -17,6 +17,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddSweetAlert2();
 builder.Services.AddScoped<DataServices>();
 builder.Services.AddSingleton<LevelServices>();
+builder.Services.AddScoped<ShowAlertServices>();
 
 
 builder.Services

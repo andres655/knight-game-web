@@ -9,6 +9,7 @@
 @inject SweetAlertService swal
 @inject DataServices data
 @inject LevelServices LevelService
+@inject ShowAlertServices showAlert
 @inject IJSRuntime JS
 
 <PageTitle>Home</PageTitle>
@@ -16,27 +17,25 @@
 
 <div class="container">
     
-    <div class="header">
-        <span @onclick="reset">
+    <div  class="header">
+        <span title="reiniciar" @onclick=" ResetGame">
             <Icon Name="IconName.Redo" />
 
 
         </span>
-        <span @onclick="back">
+        <span title="rehacer" @onclick="Back">
             <Icon Name="IconName.Reply" />
 
 
         </span>
-        <span>@board.contador</span>
-        <BlazorApp13.Componets.Temporizador />
-        <span>High Score: @player.Score</span>
-        <div>
-            <Span @onclick="exit" >
+        <span title="tutorial" @onclick="Tutorial">
+            <Icon Name="IconName.Info" />
 
-                <Icon Name="IconName.Times" />
-                
-            </Span>
-        </div>
+
+        </span>
+        <span title="score">@board.contador</span>
+        
+       
       
     </div>
     <div style="--columns: @level.Row; --black: @level.Black; --white: @level.White;" class="board">
@@ -44,6 +43,19 @@
         {
             <BlazorApp13.Componets.Squarer squarer="item" OnmouseUp="()=>MouseUp(item)" />
         }
+    </div>
+
+    <div class="footer">
+        <BlazorApp13.Componets.Temporizador />
+        <span>High Score: @player.Score</span>
+        <div>
+            <Span title="salir" @onclick="Exit">
+
+                <Icon Name="IconName.Times" />
+
+            </Span>
+        </div>
+
     </div>
        
 </div>

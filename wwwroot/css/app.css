@@ -213,15 +213,15 @@ code {
         justify-content: space-between;
     }
 }
-.header {
+.header, .footer {
     display: flex;
+    gap: 10px;
     justify-content: space-between; /* Distribuye el espacio entre los elementos */
     align-items: center; /* Centra los elementos verticalmente */
     padding: 1em; /* Opcional: Añadir algo de padding para mejor apariencia */
     background-color: #262421; /* Opcional: Añadir un color de fondo */
-   
 }
-    .header span {
+    .header span, .footer span {
         flex: 1; /* Distribuye el espacio equitativamente */
         text-align: center; /* Centra el texto dentro de cada span */
     }
